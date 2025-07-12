@@ -1,8 +1,384 @@
 <!DOCTYPE html>
 <html>
-    <h1>Welcome to File To Speech!</h1>
-    <form action="/" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" accept=".txt, .pdf">
-    <button type="submit" id="submit">Submit</button>
-    </form>
+<head>
+    <title>File to Speech</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            max-width: 100%;
+            color: #333;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 100%;
+            min-height: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-container {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #submit {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        #submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        #submit:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Progress Container */
+        .progress-container {
+            display: none;
+            background: #2d3748;
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pixel-art-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .pixel-cat {
+            font-size: 60px;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+
+        /* art bouncing */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: #4a5568;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.3) 25%, rgba(255,255,255,0.3) 50%, transparent 50%, transparent 75%, rgba(255,255,255,0.3) 75%);
+            background-size: 20px 20px;
+            animation: progressStripes 1s linear infinite;
+        }
+
+        @keyframes progressStripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 0; }
+        }
+
+        .progress-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .progress-details {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 5px 0;
+        }
+
+        /* completed */
+        .completed {
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            animation: celebration 2s ease-in-out;
+        }
+
+        @keyframes celebration {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .download-button {
+            background: #48bb78;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .download-button:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .error-state {
+            background: #e53e3e;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>File to Speech!</h1>
+
+        <div class="form-container" id="formContainer">
+            <form id="speechForm">
+                <div class="form-group">
+                    <label for="langOptions">Available Languages:</label>
+                    <select name="langOptions" id="langOptions">
+                        {% for code, name in languages.items() %}
+                            <option value="{{ code }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="file">Upload A File:</label>
+                    <input type="file" name="file" id="file" accept=".txt,.pdf" required>
+                </div>
+
+                <div class="submit-container">
+                    <button type="submit" id="submit">
+                        Convert to Speech
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="pixel-art-container">
+                <div class="pixel-cat">放猫图</div>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="progress-text" id="progressText">0%</div>
+            <div class="progress-details" id="progressDetails">Preparing your file...</div>
+        </div>
+    </div>
+
+    <!-- show and hide progress bar, and form submission -->
+    <script>
+        const form = document.getElementById('speechForm');
+        const formContainer = document.getElementById('formContainer');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressDetails = document.getElementById('progressDetails');
+
+        let currentJobId = null;
+        let progressInterval = null;
+
+        function startProgress() {
+            formContainer.style.display = 'none';
+            progressContainer.style.display = 'block';
+        }
+
+        function updateProgress(progress, details) {
+            progressBar.style.width = progress + '%';
+            progressText.textContent = progress + '%';
+            progressDetails.textContent = details;
+        }
+
+        function showCompleted(jobId) {
+            progressContainer.classList.add('completed');
+            progressBar.style.width = '100%';
+            progressText.textContent = '100%';
+            progressDetails.textContent = 'Conversion completed successfully!';
+            
+            //Add download button
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'download-button';
+            downloadBtn.textContent = '🎵 Download Your Audio! 🎵';
+            downloadBtn.onclick = () => downloadFile(jobId);
+            progressContainer.appendChild(downloadBtn);
+        }
+
+        function showError(message) {
+            progressContainer.classList.add('error-state');
+            progressDetails.textContent = message;
+        }
+
+        function downloadFile(jobId) {
+            window.location.href = `/download/${jobId}`;
+        }
+
+        function checkProgress() {
+            if (!currentJobId) return;
+
+            fetch(`/status/${currentJobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'processing') {
+                        updateProgress(data.progress || 0, `Processing chunk ${Math.floor((data.progress || 0) / 100 * 10) + 1}...`);
+                    } else if (data.status === 'combining') {
+                        updateProgress(95, 'Combining audio chunks...');
+                    } else if (data.status === 'completed') {
+                        clearInterval(progressInterval);
+                        showCompleted(currentJobId);
+                    } else if (data.status === 'error') {
+                        clearInterval(progressInterval);
+                        showError(data.message || 'Unknown error occurred');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking progress:', error);
+                });
+        }
+
+        //Stop browser from reloading, and send data to server
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('file');
+            const languageSelect = document.getElementById('langOptions');
+            
+            if (!fileInput.files.length) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('langOptions', languageSelect.value);
+
+            startProgress();
+
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    return response.json();
+                } else {
+                    //Small file --> direct download
+                    return response.blob().then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'speech.mp3';
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        
+                        //Reset the form and progress
+                        formContainer.style.display = 'block';
+                        progressContainer.style.display = 'none';
+                        progressContainer.classList.remove('completed', 'error-state');
+                    });
+                }
+            })
+            .then(data => {
+                if (data && data.job_id) {
+                    //Large file --> background processing
+                    currentJobId = data.job_id;
+                    progressDetails.textContent = `Estimated time: ${data.estimated_duration} | Text length: ${data.text_length} characters`;
+                    
+                    //Start checking progress
+                    progressInterval = setInterval(checkProgress, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('Network error occurred. Please try again.');
+            });
+        });
+    </script>
+</body>
 </html>
